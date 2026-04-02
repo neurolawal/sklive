@@ -1,0 +1,5 @@
+{
+  "name": "sklive",
+  "description": "Zero-cost, real-time synchronized movie-watching app with built-in video chat optimized for low bandwidth.",
+  "requestFramePermissions": ["camera", "microphone"]
+}
