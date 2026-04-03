@@ -36,7 +36,7 @@ export default function Home() {
           <h1 className="text-6xl font-black tracking-tighter text-white">
             sk<span className="text-red-600">live</span>
           </h1>
-          <p className="text-gray-400 text-lg">hopefully this works for movie night</p>
+          <p className="text-gray-400 text-lg">Let’s see if this survives movie night.</p>
         </div>
 
         <div className="space-y-4">
@@ -75,7 +75,7 @@ export default function Home() {
         </div>
 
         <div className="pt-8 text-gray-600 text-sm">
-          As smoothly as possible with out gutter network(s)
+          Smooth - unless your network acts up (so no promises).
         </div>
       </motion.div>
     </div>
