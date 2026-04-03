@@ -4,7 +4,7 @@ import ReactPlayer from "react-player";
 import { io, Socket } from "socket.io-client";
 import { 
   Mic, MicOff, Share2, Users, RefreshCw,
-  Send, Zap, ZapOff, Check, User
+  Send, Zap, ZapOff, Check, User, Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { parseVideoUrl } from "../utils/urlParser";
@@ -239,6 +239,18 @@ export default function Room() {
     }
   };
 
+  const handleStopVideo = () => {
+    setVideoUrl("");
+    if (isSyncing) {
+      socket?.emit("video-update", {
+        roomId,
+        videoUrl: "",
+        playing: false,
+        currentTime: 0
+      });
+    }
+  };
+
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = parseVideoUrl(inputUrl);
@@ -394,11 +406,11 @@ export default function Room() {
             
             {videoUrl && (
               <button 
-                onClick={() => setVideoUrl("")}
-                className="p-4 rounded-2xl text-gray-500 hover:text-white transition-all"
-                title="Change Video"
+                onClick={handleStopVideo}
+                className="p-4 rounded-2xl text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                title="Stop Video globally"
               >
-                <RefreshCw size={24} />
+                <Square fill="currentColor" size={24} />
               </button>
             )}
           </div>
