@@ -36,7 +36,7 @@ export default function Home() {
           <h1 className="text-6xl font-black tracking-tighter text-white">
             sk<span className="text-red-600">live</span>
           </h1>
-          <p className="text-gray-400 text-lg">Zero-cost, real-time synchronized movie watching.</p>
+          <p className="text-gray-400 text-lg">hopefully this works for movie night</p>
         </div>
 
         <div className="space-y-4">
@@ -75,7 +75,7 @@ export default function Home() {
         </div>
 
         <div className="pt-8 text-gray-600 text-sm">
-          Built for low bandwidth. No logins. No databases.
+          As smoothly as possible with out gutter network(s)
         </div>
       </motion.div>
     </div>
