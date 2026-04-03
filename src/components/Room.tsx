@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { parseVideoUrl } from "../utils/urlParser";
+import AudioPulse from "./AudioPulse";
 
 const SOCKET_URL = window.location.origin;
 
@@ -131,7 +132,13 @@ export default function Room() {
         peer = createPeer(from);
       }
 
-      if (signal.type === "offer") {
+      if (signal.type === "new-user") {
+        if (!localStream) {
+          // If we don't have our own mic, we must manually trigger negotiation 
+          // to receive the new user's audio, because addTrack won't be called to fire it naturally.
+          peer.addTransceiver("audio", { direction: "recvonly" });
+        }
+      } else if (signal.type === "offer") {
         await peer.setRemoteDescription(new RTCSessionDescription(signal));
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
@@ -172,6 +179,17 @@ export default function Room() {
       });
     };
 
+    peer.onnegotiationneeded = async () => {
+      if (peer.signalingState !== "stable") return;
+      try {
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+        socket?.emit("webrtc-signal", { roomId, to: userId, signal: peer.localDescription });
+      } catch (err) {
+        console.error("Error creating offer", err);
+      }
+    };
+
     setPeers(prev => {
       const next = new Map(prev);
       next.set(userId, peer);
@@ -183,7 +201,14 @@ export default function Room() {
 
   const startCall = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true, 
+          noiseSuppression: true, 
+          autoGainControl: true 
+        }, 
+        video: false 
+      });
       setLocalStream(stream);
       setIsMicOn(true);
 
@@ -442,16 +467,20 @@ export default function Room() {
               <div className="p-4 border-b border-gray-900 bg-gray-900/30">
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                   <div className="flex flex-col items-center gap-1 min-w-[60px]">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${isMicOn ? 'border-green-500 bg-green-500/10' : 'border-gray-700 bg-gray-800'}`}>
-                      <User size={20} className={isMicOn ? 'text-green-500' : 'text-gray-500'} />
-                    </div>
+                    <AudioPulse stream={localStream} isActive={isMicOn}>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 z-10 relative ${isMicOn ? 'border-green-500 bg-[#0a0a0a]' : 'border-gray-700 bg-gray-800'}`}>
+                        <User size={20} className={isMicOn ? 'text-green-500' : 'text-gray-500'} />
+                      </div>
+                    </AudioPulse>
                     <span className="text-[10px] text-gray-400 font-medium">You</span>
                   </div>
-                  {Array.from(remoteStreams.keys()).map(userId => (
+                  {Array.from(remoteStreams.entries()).map(([userId, stream]) => (
                     <div key={userId} className="flex flex-col items-center gap-1 min-w-[60px]">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-green-500 bg-green-500/10">
-                        <User size={20} className="text-green-500" />
-                      </div>
+                      <AudioPulse stream={stream} isActive={true}>
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-green-500 bg-[#0a0a0a] z-10 relative">
+                          <User size={20} className="text-green-500" />
+                        </div>
+                      </AudioPulse>
                       <span className="text-[10px] text-gray-400 font-medium">{userId.substring(0, 4)}</span>
                     </div>
                   ))}
