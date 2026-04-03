@@ -42,6 +42,7 @@ async function startServer() {
       if (state) {
         socket.emit("room-state", state);
       }
+      io.to(roomId).emit("user-count", io.sockets.adapter.rooms.get(roomId)?.size || 1);
     });
 
     // Video Sync Events
@@ -78,6 +79,8 @@ async function startServer() {
       for (const room of socket.rooms) {
         if (room !== socket.id) {
           socket.to(room).emit("user-left", socket.id);
+          const newSize = Math.max(0, (io.sockets.adapter.rooms.get(room)?.size || 1) - 1);
+          io.to(room).emit("user-count", newSize);
         }
       }
     });

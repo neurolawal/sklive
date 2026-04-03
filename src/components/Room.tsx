@@ -32,6 +32,7 @@ export default function Room() {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   const [peers, setPeers] = useState<Map<string, RTCPeerConnection>>(new Map());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [userCount, setUserCount] = useState(1);
   const syncLockRef = useRef(false);
   const [copied, setCopied] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -83,6 +84,10 @@ export default function Room() {
       if (playerRef.current) {
         playerRef.current.currentTime = data.currentTime;
       }
+    });
+
+    newSocket.on("user-count", (count: number) => {
+      setUserCount(count);
     });
 
     newSocket.on("user-left", (userId: string) => {
@@ -429,7 +434,7 @@ export default function Room() {
                 <span className="font-bold text-sm uppercase tracking-widest text-gray-500">Room Chat</span>
                 <div className="flex items-center gap-2">
                   <span className="bg-red-600/10 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">LIVE</span>
-                  <span className="text-xs text-gray-500">{remoteStreams.size + 1} Online</span>
+                  <span className="text-xs text-gray-500">{userCount} Online</span>
                 </div>
               </div>
               
