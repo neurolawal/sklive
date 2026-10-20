@@ -4,7 +4,7 @@ export const parseVideoUrl = (url: string): string => {
   // Google Drive
   const driveMatch = url.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|docs\.google\.com\/file\/d\/)([a-zA-Z0-9_-]+)/);
   if (driveMatch) {
-    return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+    return `/api/drive-stream?id=${driveMatch[1]}`;
   }
 
   // Dropbox

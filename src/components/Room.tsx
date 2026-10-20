@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { parseVideoUrl } from "../utils/urlParser";
 import AudioPulse from "./AudioPulse";
+import CustomVideoPlayer from "./CustomVideoPlayer";
 
 const SOCKET_URL = window.location.origin;
 
@@ -42,13 +43,29 @@ export default function Room() {
   const [chatInput, setChatInput] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const playerRef = useRef<HTMLVideoElement>(null);
+  // Playlist / Queue state
+  const [queue, setQueue] = useState<Array<{ id: string; title: string; url: string }>>([]);
+  const [currentQueueIndex, setCurrentQueueIndex] = useState<number>(-1);
+  const [isFolderResolving, setIsFolderResolving] = useState<boolean>(false);
 
-  // Initialize Socket
+  // Subtitles state (synced with room)
+  const [subtitles, setSubtitles] = useState<{
+    name: string;
+    cues: Array<{ id: number; start: number; end: number; text: string }>;
+  } | null>(null);
+
+  const playerRef = useRef<any>(null);
+
+  const isSyncingRef = useRef(isSyncing);
+  isSyncingRef.current = isSyncing;
+  const videoUrlRef = useRef(videoUrl);
+  videoUrlRef.current = videoUrl;
+
+  // Initialize Socket once per room
   useEffect(() => {
     // Connect to the same origin automatically
     const newSocket = io({
-      transports: ['polling', 'websocket']
+      transports: ['websocket', 'polling']
     });
     setSocket(newSocket);
 
@@ -62,16 +79,17 @@ export default function Room() {
     });
 
     newSocket.on("video-update", (data: any) => {
-      if (!isSyncing || syncLockRef.current) return;
+      if (!isSyncingRef.current || syncLockRef.current) return;
       
       syncLockRef.current = true;
-      if (data.videoUrl !== videoUrl) {
+      if (data.videoUrl !== videoUrlRef.current) {
         setVideoUrl(data.videoUrl);
       }
       setPlaying(data.playing);
       
       // Only seek if the difference is significant (> 2 seconds)
-      const diff = Math.abs((playerRef.current?.currentTime || 0) - data.currentTime);
+      const currentPos = playerRef.current?.currentTime || 0;
+      const diff = Math.abs(currentPos - data.currentTime);
       if (diff > 2 && playerRef.current) {
         playerRef.current.currentTime = data.currentTime;
       }
@@ -80,11 +98,31 @@ export default function Room() {
     });
 
     newSocket.on("room-state", (data: any) => {
-      setVideoUrl(data.videoUrl);
-      setPlaying(data.playing);
-      if (playerRef.current) {
+      setVideoUrl(data.videoUrl || "");
+      setPlaying(data.playing || false);
+      if (data.queue) setQueue(data.queue);
+      if (typeof data.currentQueueIndex === "number") setCurrentQueueIndex(data.currentQueueIndex);
+      if (data.subtitles) setSubtitles(data.subtitles);
+      if (playerRef.current && data.currentTime) {
         playerRef.current.currentTime = data.currentTime;
       }
+    });
+
+    newSocket.on("queue-update", (data: { queue: any[]; currentQueueIndex: number }) => {
+      setQueue(data.queue);
+      if (typeof data.currentQueueIndex === "number") {
+        setCurrentQueueIndex(data.currentQueueIndex);
+      }
+    });
+
+    newSocket.on("queue-select", (data: { index: number; item: any }) => {
+      setCurrentQueueIndex(data.index);
+      setVideoUrl(data.item.url);
+      setPlaying(true);
+    });
+
+    newSocket.on("subtitles-update", (subs: any) => {
+      setSubtitles(subs);
     });
 
     newSocket.on("user-count", (count: number) => {
@@ -113,7 +151,7 @@ export default function Room() {
     return () => {
       newSocket.disconnect();
     };
-  }, [roomId, isSyncing, videoUrl]);
+  }, [roomId]);
 
   // Scroll to bottom of chat
   useEffect(() => {
@@ -213,7 +251,6 @@ export default function Room() {
       setIsMicOn(true);
 
       // Notify others to start peer connection
-      const offer = await new RTCPeerConnection().createOffer(); // Dummy to trigger
       socket?.emit("webrtc-signal", { roomId, signal: { type: "new-user" } });
     } catch (err) {
       console.error("Error accessing media devices:", err);
@@ -257,14 +294,14 @@ export default function Room() {
     }
   };
 
-  const handleSeek = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+  const handleSeek = (seconds: number) => {
     if (syncLockRef.current) return;
     if (isSyncing) {
       socket?.emit("video-update", {
         roomId,
         videoUrl,
         playing,
-        currentTime: e.currentTarget.currentTime
+        currentTime: seconds
       });
     }
   };
@@ -281,10 +318,96 @@ export default function Room() {
     }
   };
 
-  const handleUrlSubmit = (e: React.FormEvent) => {
+  const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseVideoUrl(inputUrl);
+    const rawUrl = inputUrl.trim();
+    if (!rawUrl) return;
+
+    // 1. Check for multiple URLs pasted together (separated by newlines, commas, or spaces)
+    const multiUrls = rawUrl.split(/[\r\n,]+/).map(u => u.trim()).filter(Boolean);
+    if (multiUrls.length > 1) {
+      const newItems = multiUrls.map((u, i) => {
+        const parsed = parseVideoUrl(u);
+        const name = decodeURIComponent(u.split("/").pop()?.split("?")[0] || `Video ${i + 1}`);
+        return {
+          id: `item-${Date.now()}-${i}`,
+          title: name,
+          url: parsed,
+        };
+      });
+
+      const updatedQueue = [...queue, ...newItems];
+      setQueue(updatedQueue);
+      if (currentQueueIndex === -1) {
+        setCurrentQueueIndex(0);
+        setVideoUrl(newItems[0].url);
+        if (isSyncing) {
+          socket?.emit("video-update", {
+            roomId,
+            videoUrl: newItems[0].url,
+            playing: true,
+            currentTime: 0,
+          });
+        }
+      }
+      socket?.emit("queue-update", { roomId, queue: updatedQueue, currentQueueIndex: currentQueueIndex === -1 ? 0 : currentQueueIndex });
+      setInputUrl("");
+      return;
+    }
+
+    // 2. Check if this is a shared folder URL (Dropbox or Google Drive folder)
+    if (rawUrl.includes("dropbox.com") && (rawUrl.includes("/scl/fo/") || rawUrl.includes("/sh/"))) {
+      setIsFolderResolving(true);
+      try {
+        const res = await fetch(`/api/resolve-folder?url=${encodeURIComponent(rawUrl)}`);
+        const data = await res.json();
+        if (data.items && data.items.length > 0) {
+          const newQueue = data.items;
+          setQueue(newQueue);
+          setCurrentQueueIndex(0);
+          const firstVideo = newQueue[0].url;
+          setVideoUrl(firstVideo);
+          socket?.emit("queue-update", { roomId, queue: newQueue, currentQueueIndex: 0 });
+          if (isSyncing) {
+            socket?.emit("video-update", {
+              roomId,
+              videoUrl: firstVideo,
+              playing: true,
+              currentTime: 0,
+            });
+          }
+          setInputUrl("");
+          setIsFolderResolving(false);
+          return;
+        } else {
+          alert("Dropbox protects shared folder listings from external crawlers. Please paste the direct file links into the box (you can paste multiple links at once!)");
+          setIsFolderResolving(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to resolve folder", err);
+        alert("Could not load folder. Try pasting the direct video links.");
+        setIsFolderResolving(false);
+        return;
+      }
+    }
+
+    // 3. Normal single video URL
+    const parsed = parseVideoUrl(rawUrl);
     setVideoUrl(parsed);
+
+    // Add to single-item queue or update current queue
+    const singleTitle = decodeURIComponent(rawUrl.split("/").pop()?.split("?")[0] || "Live Video");
+    const singleItem = {
+      id: `item-${Date.now()}`,
+      title: singleTitle,
+      url: parsed,
+    };
+    const updatedQueue = queue.length > 0 ? [...queue, singleItem] : [singleItem];
+    setQueue(updatedQueue);
+    setCurrentQueueIndex(updatedQueue.length - 1);
+    socket?.emit("queue-update", { roomId, queue: updatedQueue, currentQueueIndex: updatedQueue.length - 1 });
+
     if (isSyncing) {
       socket?.emit("video-update", {
         roomId,
@@ -294,6 +417,68 @@ export default function Room() {
       });
     }
     setInputUrl("");
+  };
+
+  const handleQueueSelect = (index: number) => {
+    if (!queue[index]) return;
+    setCurrentQueueIndex(index);
+    setVideoUrl(queue[index].url);
+    setPlaying(true);
+    socket?.emit("queue-select", { roomId, index });
+  };
+
+  const handleVideoEnded = () => {
+    if (queue.length > 1 && currentQueueIndex < queue.length - 1) {
+      const nextIdx = currentQueueIndex + 1;
+      handleQueueSelect(nextIdx);
+    }
+  };
+
+  const handleUpdateSubtitles = (newSubs: any) => {
+    setSubtitles(newSubs);
+    socket?.emit("subtitles-update", { roomId, subtitles: newSubs });
+  };
+
+  const handleAddToQueue = (urlText: string) => {
+    const lines = urlText.split(/[\r\n,]+/).map(u => u.trim()).filter(Boolean);
+    if (!lines.length) return;
+
+    const newItems = lines.map((u, i) => {
+      const parsed = parseVideoUrl(u);
+      const name = decodeURIComponent(u.split("/").pop()?.split("?")[0] || `Video ${queue.length + i + 1}`);
+      return {
+        id: `item-${Date.now()}-${i}`,
+        title: name,
+        url: parsed,
+      };
+    });
+
+    const updatedQueue = [...queue, ...newItems];
+    setQueue(updatedQueue);
+    socket?.emit("queue-update", { roomId, queue: updatedQueue, currentQueueIndex });
+  };
+
+  const handleRemoveFromQueue = (index: number) => {
+    if (index < 0 || index >= queue.length) return;
+    const updatedQueue = queue.filter((_, i) => i !== index);
+    let newIndex = currentQueueIndex;
+
+    if (index === currentQueueIndex) {
+      if (updatedQueue.length === 0) {
+        newIndex = -1;
+        setVideoUrl("");
+        setPlaying(false);
+      } else {
+        newIndex = Math.min(index, updatedQueue.length - 1);
+        setVideoUrl(updatedQueue[newIndex].url);
+      }
+    } else if (index < currentQueueIndex) {
+      newIndex = currentQueueIndex - 1;
+    }
+
+    setQueue(updatedQueue);
+    setCurrentQueueIndex(newIndex);
+    socket?.emit("queue-update", { roomId, queue: updatedQueue, currentQueueIndex: newIndex });
   };
 
   const handleShare = () => {
@@ -377,7 +562,7 @@ export default function Room() {
               <form onSubmit={handleUrlSubmit} className="max-w-2xl w-full space-y-6 text-center">
                 <div className="space-y-2">
                   <h2 className="text-3xl font-bold">Ready to watch?</h2>
-                  <p className="text-gray-500">Paste a link from YouTube, Drive, Dropbox, or a direct MP4 URL.</p>
+                  <p className="text-gray-500">Paste a link from YouTube, Drive, Dropbox, or a shared folder.</p>
                 </div>
                 <div className="flex gap-2 p-2 bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl">
                   <input
@@ -385,62 +570,63 @@ export default function Room() {
                     placeholder="https://..."
                     value={inputUrl}
                     onChange={(e) => setInputUrl(e.target.value)}
-                    className="flex-1 bg-transparent px-4 py-3 focus:outline-none"
+                    className="flex-1 bg-transparent px-4 py-3 focus:outline-none text-white"
                   />
                   <button 
                     type="submit"
-                    className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-xl font-bold transition-all"
+                    disabled={isFolderResolving}
+                    className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2"
                   >
-                    Load Video
+                    {isFolderResolving ? "Loading Folder..." : "Load Video"}
                   </button>
                 </div>
               </form>
             </div>
           ) : (
             <div className="flex-1 bg-black relative">
-              <ReactPlayer
-                ref={playerRef}
-                src={videoUrl}
+              <CustomVideoPlayer
+                url={videoUrl}
                 playing={playing}
-                controls={true}
-                width="100%"
-                height="100%"
                 onPlay={handlePlay}
                 onPause={handlePause}
-                onSeeked={handleSeek}
-                onTimeUpdate={(e: React.SyntheticEvent<HTMLVideoElement>) => setCurrentTime(e.currentTarget.currentTime)}
-                style={{ position: "absolute", top: 0, left: 0 }}
+                onSeek={handleSeek}
+                onEnded={handleVideoEnded}
+                subtitles={subtitles}
+                onUpdateSubtitles={handleUpdateSubtitles}
+                queue={queue}
+                currentQueueIndex={currentQueueIndex}
+                onSelectQueueIndex={handleQueueSelect}
+                onAddToQueue={handleAddToQueue}
+                onRemoveFromQueue={handleRemoveFromQueue}
               />
             </div>
           )}
 
-          {/* Control Center Overlay */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 p-2 bg-[#0a0a0a]/90 backdrop-blur-xl border border-gray-800 rounded-3xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
+          {/* Control Center Overlay (Voice chat, chat toggle, stop video) */}
+          <div className="absolute top-4 right-4 flex items-center gap-2 p-1.5 bg-[#0a0a0a]/80 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl z-30">
             <button 
               onClick={toggleMic}
-              className={`p-4 rounded-2xl transition-all ${isMicOn ? "bg-gray-800 text-white" : "bg-red-600/20 text-red-600"}`}
+              className={`p-2.5 rounded-xl transition-all ${isMicOn ? "bg-gray-800 text-white" : "bg-red-600/20 text-red-600"}`}
               title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
             >
-              {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
+              {isMicOn ? <Mic size={18} /> : <MicOff size={18} />}
             </button>
-            
-            <div className="w-px h-10 bg-gray-800 mx-2" />
             
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`p-4 rounded-2xl transition-all ${isSidebarOpen ? "bg-gray-800 text-white" : "text-gray-500 hover:text-white"}`}
+              className={`p-2.5 rounded-xl transition-all ${isSidebarOpen ? "bg-gray-800 text-white" : "text-gray-500 hover:text-white"}`}
               title="Toggle Chat"
             >
-              <Users size={24} />
+              <Users size={18} />
             </button>
             
             {videoUrl && (
               <button 
                 onClick={handleStopVideo}
-                className="p-4 rounded-2xl text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                className="p-2.5 rounded-xl text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
                 title="Stop Video globally"
               >
-                <Square fill="currentColor" size={24} />
+                <Square fill="currentColor" size={18} />
               </button>
             )}
           </div>
