@@ -6,14 +6,11 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install all dependencies (including devDependencies needed for vite build)
-RUN npm install
+# Install production dependencies only (no build tools needed, dist is pre-built)
+RUN npm install --omit=dev
 
-# Copy application files
+# Copy application files (including pre-built dist/)
 COPY . .
-
-# Build the Vite frontend
-RUN npm run build
 
 # Expose port (Render automatically maps the exposed port)
 EXPOSE 3000
