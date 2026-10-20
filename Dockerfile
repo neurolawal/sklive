@@ -3,6 +3,9 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
+# Set environment to production
+ENV NODE_ENV=production
+
 # Copy package files
 COPY package.json package-lock.json* ./
 

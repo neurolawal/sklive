@@ -59,6 +59,40 @@ export default function CustomVideoPlayer({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTimeUpdateRef = useRef<number>(0);
 
+  // Anti-stall & buffer recovery watchdog
+  const [isBuffering, setIsBuffering] = useState(false);
+  const stallWatchdogRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleBufferStart = () => {
+    setIsBuffering(true);
+    if (stallWatchdogRef.current) clearTimeout(stallWatchdogRef.current);
+    if (playing) {
+      // Auto-nudge if stream hangs in buffer for > 3.5 seconds
+      stallWatchdogRef.current = setTimeout(() => {
+        forceUnstickBuffer();
+      }, 3500);
+    }
+  };
+
+  const handleBufferEnd = () => {
+    setIsBuffering(false);
+    if (stallWatchdogRef.current) {
+      clearTimeout(stallWatchdogRef.current);
+      stallWatchdogRef.current = null;
+    }
+  };
+
+  const forceUnstickBuffer = () => {
+    if (!playerRef.current) return;
+    try {
+      const curr = playerRef.current.currentTime || 0;
+      playerRef.current.currentTime = curr + 0.05;
+      playerRef.current.play?.().catch(() => {});
+    } catch (e) {
+      console.warn("Unstick attempt error:", e);
+    }
+  };
+
   // Subtitle search modal
   const [isSubtitleModalOpen, setIsSubtitleModalOpen] = useState(false);
   const [subtitleSearchQuery, setSubtitleSearchQuery] = useState("");
@@ -227,12 +261,22 @@ export default function CustomVideoPlayer({
         controls={false}
         width="100%"
         height="100%"
+        preload="metadata"
+        playsInline
         volume={isMuted ? 0 : volume}
         onPlay={onPlay}
         onPause={onPause}
         onEnded={onEnded}
-        onSeeked={(e: any) => onSeek(e.currentTarget.currentTime)}
+        onWaiting={handleBufferStart}
+        onStalled={handleBufferStart}
+        onPlaying={handleBufferEnd}
+        onCanPlay={handleBufferEnd}
+        onSeeked={(e: any) => {
+          handleBufferEnd();
+          onSeek(e.currentTarget.currentTime);
+        }}
         onTimeUpdate={(e: any) => {
+          handleBufferEnd();
           const now = performance.now();
           if (now - lastTimeUpdateRef.current > 250) {
             lastTimeUpdateRef.current = now;
@@ -242,6 +286,25 @@ export default function CustomVideoPlayer({
         onLoadedMetadata={(e: any) => setDuration(e.currentTarget.duration || 0)}
         style={{ position: "absolute", top: 0, left: 0 }}
       />
+
+      {/* Buffering Indicator with instant Unstick button */}
+      {isBuffering && playing && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/85 backdrop-blur-md border border-white/10 px-3.5 py-1.5 rounded-full text-xs text-white shadow-2xl">
+          <Loader2 size={13} className="animate-spin text-red-500" />
+          <span>Buffering...</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              forceUnstickBuffer();
+            }}
+            className="ml-1 bg-white/10 hover:bg-white/20 active:scale-95 px-2 py-0.5 rounded text-[10px] font-bold text-red-400 hover:text-red-300 transition-all"
+            title="Click to flush browser media buffer and resume stream"
+          >
+            ⚡ Unstick
+          </button>
+        </div>
+      )}
 
       {/* Center Big Play/Pause Indicator on Click */}
       <div
@@ -439,10 +502,10 @@ export default function CustomVideoPlayer({
                     e.stopPropagation();
                     onRemoveFromQueue(idx);
                   }}
-                  className="p-1 text-gray-400 hover:text-white hover:bg-white/20 rounded-md transition-all opacity-0 group-hover/item:opacity-100"
+                  className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-md transition-all opacity-80 hover:opacity-100"
                   title="Remove from playlist"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             ))}

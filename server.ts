@@ -60,6 +60,11 @@ async function startServer() {
 
   const PORT = Number(process.env.PORT) || 3000;
 
+  // Lightweight Health check endpoint
+  app.get("/healthz", (req, res) => {
+    res.status(200).send("OK");
+  });
+
   // Google Drive Streaming Proxy endpoint
   // Bypasses the 100MB virus scan HTML warning and serves native 206 Partial Content video stream
   app.get("/api/drive-stream", async (req, res) => {
@@ -129,6 +134,10 @@ async function startServer() {
         res.setHeader("Content-Type", "video/mp4");
       }
       res.setHeader("Accept-Ranges", "bytes");
+      // Prevent browser sparse disk cache exhaustion on long video playback
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
 
       if (!streamResponse.body) {
         return res.status(500).send("No stream body");
@@ -140,6 +149,13 @@ async function startServer() {
 
       req.on("close", () => {
         nodeStream.destroy();
+      });
+      res.on("close", () => {
+        nodeStream.destroy();
+      });
+      nodeStream.on("error", (err) => {
+        console.error("Video proxy stream error:", err);
+        if (!res.headersSent) res.status(500).end();
       });
 
       nodeStream.pipe(res);
@@ -371,15 +387,28 @@ async function startServer() {
     });
   });
 
+  // Garbage collection: clean up inactive rooms every 15 minutes to prevent RAM growth
+  setInterval(() => {
+    const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
+    for (const [roomId, room] of rooms.entries()) {
+      const activeSockets = io.sockets.adapter.rooms.get(roomId)?.size || 0;
+      if (activeSockets === 0 && room.lastUpdated < twoHoursAgo) {
+        rooms.delete(roomId);
+        console.log(`Cleaned up inactive room: ${roomId}`);
+      }
+    }
+  }, 15 * 60 * 1000);
+
   const distPath = path.join(process.cwd(), "dist");
+  const distIndexHtml = path.join(distPath, "index.html");
 
   // In production (e.g. on Render), serve the prebuilt dist folder.
   // In development, run the Vite development server with HMR.
-  if (process.env.NODE_ENV === "production" && fs.existsSync(distPath)) {
+  if (fs.existsSync(distIndexHtml)) {
     console.log("Serving production build from dist folder...");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      res.sendFile(distIndexHtml);
     });
   } else {
     console.log("Starting Vite development server...");
