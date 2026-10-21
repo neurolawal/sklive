@@ -1,1 +1,109 @@
 @import "tailwindcss";
+
+@layer utilities {
+  /* Ambient canvas blending cyan, teal, seafoam, midnight indigo, and a dash of crimson */
+  .glass-ambient-canvas {
+    background-color: #06070d;
+    background-image: 
+      radial-gradient(ellipse 75% 55% at 18% 28%, rgba(6, 182, 212, 0.22) 0%, rgba(13, 148, 136, 0.12) 40%, transparent 75%),
+      radial-gradient(ellipse 65% 45% at 82% 18%, rgba(94, 234, 212, 0.18) 0%, rgba(2, 132, 199, 0.10) 45%, transparent 75%),
+      radial-gradient(ellipse 70% 55% at 85% 82%, rgba(225, 29, 72, 0.24) 0%, rgba(159, 18, 57, 0.08) 50%, transparent 80%),
+      radial-gradient(ellipse 90% 70% at 50% 50%, rgba(15, 23, 42, 0.65) 0%, #05070d 100%);
+    background-attachment: fixed;
+  }
+
+  /* Liquid Glass Panel (Cards, Drawers, Modals) */
+  .glass-panel {
+    background: rgba(14, 18, 28, 0.55);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35),
+      0 24px 60px -16px rgba(0, 0, 0, 0.75);
+  }
+
+  /* Liquid Optical Glass Pill (Matches reference image capsule) */
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.055);
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.32),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
+      0 12px 28px -6px rgba(0, 0, 0, 0.55);
+  }
+
+  .glass-pill:hover {
+    background: rgba(255, 255, 255, 0.085);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.42),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
+      0 16px 32px -6px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Optical Glass Input */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  }
+
+  .glass-input:focus {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(225, 29, 72, 0.55);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 3px rgba(225, 29, 72, 0.15);
+  }
+
+  /* Primary Crimson Glass Button with Specular Rim & Colored Ambient Glow */
+  .glass-btn-primary {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.9) 0%, rgba(190, 18, 60, 0.85) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
+      0 8px 24px -4px rgba(225, 29, 72, 0.45);
+  }
+
+  .glass-btn-primary:hover {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.95) 0%, rgba(225, 29, 72, 0.95) 100%);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
+      0 12px 28px -2px rgba(225, 29, 72, 0.55);
+  }
+
+  /* Secondary Smoky Glass Button */
+  .glass-btn-secondary {
+    background: rgba(255, 255, 255, 0.055);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.18),
+      0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .glass-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.095);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  /* Glass Dock for Video Controls */
+  .glass-dock {
+    background: rgba(10, 13, 20, 0.68);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.22),
+      0 16px 40px -10px rgba(0, 0, 0, 0.85);
+  }
+}

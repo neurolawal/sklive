@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Play, Plus } from "lucide-react";
+import { Play, Plus, Sparkles, Tv } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function Home() {
@@ -26,55 +26,117 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="relative min-h-screen flex items-center justify-center p-4 glass-ambient-canvas overflow-hidden">
+      {/* Background Organic Wave Ribbons (Inspired by reference visual) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+        {/* Upper fluid ribbon curve in cyan/teal */}
+        <svg 
+          className="absolute -top-32 -left-32 w-[900px] h-[750px] opacity-35 filter blur-[1px]" 
+          viewBox="0 0 900 750" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path 
+            d="M50 150 C 300 50, 550 350, 850 180 C 700 550, 350 650, 50 150 Z" 
+            fill="url(#ribbon-cyan)" 
+          />
+          <defs>
+            <linearGradient id="ribbon-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.45" />
+              <stop offset="50%" stopColor="#0d9488" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#0284c7" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        {/* Lower flowing light curve with dash of ruby crimson */}
+        <svg 
+          className="absolute -bottom-48 -right-36 w-[1000px] h-[850px] opacity-30 filter blur-[2px]" 
+          viewBox="0 0 1000 850" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path 
+            d="M950 700 C 650 800, 350 500, 100 750 C 300 250, 750 200, 950 700 Z" 
+            fill="url(#ribbon-ruby)" 
+          />
+          <defs>
+            <linearGradient id="ribbon-ruby" x1="100%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#e11d48" stopOpacity="0.4" />
+              <stop offset="60%" stopColor="#be123c" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#0284c7" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        {/* Luminous optical glow orb */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      </div>
+
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full text-center space-y-8"
+        initial={{ opacity: 0, y: 25, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="max-w-md w-full glass-panel p-8 sm:p-10 rounded-[28px] relative z-10 text-center space-y-8"
       >
-        <div className="space-y-2">
-          <h1 className="text-6xl font-black tracking-tighter text-white">
-            ks<span className="text-red-600">live</span>
-          </h1>
-          <p className="text-gray-400 text-lg">Let’s see if this survives movie night.</p>
+        {/* Floating pill badge */}
+        <div className="flex justify-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full glass-pill text-xs font-mono text-cyan-300">
+            <Sparkles size={13} className="text-cyan-400 animate-pulse" />
+            <span>SYNCHRONIZED THEATER</span>
+          </div>
         </div>
 
+        {/* Brand logo & tagline */}
+        <div className="space-y-2.5">
+          <h1 className="text-6xl font-black tracking-tight text-white drop-shadow-md">
+            ks<span className="text-red-500 drop-shadow-[0_0_24px_rgba(239,68,68,0.45)]">live</span>
+          </h1>
+          <p className="text-gray-300/80 text-sm sm:text-base font-medium">
+            Watch movies, shows & videos together in real-time sync.
+          </p>
+        </div>
+
+        {/* Action Controls */}
         <div className="space-y-4">
           <button
             onClick={createRoom}
-            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-red-600/20"
+            className="w-full flex items-center justify-center gap-2.5 glass-btn-primary text-white font-bold py-3.5 px-6 rounded-2xl transition-all transform hover:scale-[1.015] active:scale-[0.985] text-sm uppercase tracking-wider"
           >
-            <Plus size={24} />
-            Create New Room
+            <Plus size={20} />
+            Create Watch Room
           </button>
 
-          <div className="relative">
+          <div className="relative py-1">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-800"></span>
+              <span className="w-full border-t border-white/[0.08]"></span>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#0a0a0a] px-2 text-gray-500">Or join existing</span>
+            <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
+              <span className="bg-[#0b0f19]/80 px-3 py-0.5 rounded-full border border-white/[0.06] text-gray-400 font-mono">
+                Or join existing
+              </span>
             </div>
           </div>
 
           <form onSubmit={joinRoom} className="flex gap-2">
             <input
               type="text"
-              placeholder="Enter Room ID"
+              placeholder="Enter Room Code or Link..."
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
-              className="flex-1 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-600 transition-all"
+              className="flex-1 glass-input rounded-2xl px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none transition-all font-mono"
             />
             <button
               type="submit"
-              className="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-xl transition-all"
+              className="glass-btn-secondary hover:border-red-500/40 text-white px-4 py-3 rounded-2xl transition-all flex items-center justify-center group"
+              title="Enter Room"
             >
-              <Play size={24} />
+              <Play size={18} fill="currentColor" className="text-gray-300 group-hover:text-red-400 transition-colors" />
             </button>
           </form>
         </div>
 
-        <div className="pt-8 text-gray-600 text-sm">
+        <div className="pt-4 border-t border-white/[0.06] text-gray-400/80 text-xs font-mono">
           Smooth - unless your network acts up (so no promises).
         </div>
       </motion.div>

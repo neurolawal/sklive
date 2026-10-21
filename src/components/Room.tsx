@@ -4,7 +4,7 @@ import ReactPlayer from "react-player";
 import { io, Socket } from "socket.io-client";
 import { 
   Mic, MicOff, Share2, Users, RefreshCw,
-  Send, Zap, ZapOff, Check, User, Square
+  Send, Zap, ZapOff, Check, User, Square, Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { parseVideoUrl } from "../utils/urlParser";
@@ -501,7 +501,7 @@ export default function Room() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#0a0a0a]">
+    <div className="flex flex-col h-screen overflow-hidden glass-ambient-canvas">
       {/* Hidden Audio Elements for Remote Streams */}
       {Array.from(remoteStreams.entries()).map(([userId, stream]) => (
         <audio 
@@ -513,39 +513,39 @@ export default function Room() {
       ))}
 
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-900 bg-[#0a0a0a]/80 backdrop-blur-md z-50">
+      <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/[0.08] bg-[#070913]/70 backdrop-blur-2xl z-50 shadow-xl shadow-black/40">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-black tracking-tighter cursor-pointer" onClick={() => navigate("/")}>
-            ks<span className="text-red-600">live</span>
+          <h1 className="text-2xl font-black tracking-tighter cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate("/")}>
+            ks<span className="text-red-500 drop-shadow-[0_0_16px_rgba(239,68,68,0.5)]">live</span>
           </h1>
-          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-gray-900 rounded-full border border-gray-800 text-xs font-mono text-gray-400">
-            <Users size={14} className="text-red-600" />
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 glass-pill rounded-full text-xs font-mono text-cyan-300">
+            <Users size={13} className="text-cyan-400" />
             <span>ROOM: {roomId}</span>
           </div>
-          <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-gray-900 border border-gray-800">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{isConnected ? 'Connected' : 'Offline'}</span>
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full glass-pill">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'}`} />
+            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">{isConnected ? 'Connected' : 'Offline'}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button 
             onClick={handleShare}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-900 hover:bg-gray-800 rounded-full transition-all text-gray-400 hover:text-white border border-gray-800"
+            className="flex items-center gap-2 px-3.5 py-1.5 glass-pill rounded-full transition-all text-gray-300 hover:text-white"
           >
-            {copied ? <Check size={16} className="text-green-500" /> : <Share2 size={16} />}
-            <span className="text-sm font-medium">{copied ? "Copied!" : "Share"}</span>
+            {copied ? <Check size={15} className="text-emerald-400" /> : <Share2 size={15} />}
+            <span className="text-xs font-semibold">{copied ? "Copied!" : "Share"}</span>
           </button>
           
-          <div className="h-6 w-px bg-gray-800 mx-2" />
+          <div className="h-5 w-px bg-white/[0.1] mx-1" />
           
           <button 
             onClick={() => setIsSyncing(!isSyncing)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all ${
-              isSyncing ? "bg-red-600 text-white shadow-lg shadow-red-600/20" : "bg-gray-800 text-gray-400"
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all ${
+              isSyncing ? "glass-btn-primary text-white" : "glass-pill text-gray-400 hover:text-white"
             }`}
           >
-            {isSyncing ? <Zap size={16} /> : <ZapOff size={16} />}
+            {isSyncing ? <Zap size={15} /> : <ZapOff size={15} />}
             {isSyncing ? "SYNC ON" : "SYNC OFF"}
           </button>
         </div>
@@ -556,24 +556,28 @@ export default function Room() {
         {/* Video Player Section */}
         <div className="flex-1 flex flex-col relative group">
           {!videoUrl ? (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <form onSubmit={handleUrlSubmit} className="max-w-2xl w-full space-y-6 text-center">
+            <div className="flex-1 flex items-center justify-center p-6 relative">
+              <form onSubmit={handleUrlSubmit} className="max-w-2xl w-full glass-panel p-8 sm:p-10 rounded-3xl space-y-6 text-center">
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-bold">Ready to watch?</h2>
-                  <p className="text-gray-500">Paste a link from YouTube, Drive, Dropbox, or a shared folder.</p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-pill text-xs font-mono text-cyan-300 mb-1">
+                    <Sparkles size={13} className="text-cyan-400" />
+                    <span>SYNCHRONIZED STREAM</span>
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Ready to watch?</h2>
+                  <p className="text-gray-300/80 text-sm">Paste a link from Dropbox, Google Drive, YouTube, or direct video stream.</p>
                 </div>
-                <div className="flex gap-2 p-2 bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl">
+                <div className="flex flex-col sm:flex-row gap-2.5 p-2 glass-input rounded-2xl">
                   <input
                     type="text"
                     placeholder="https://..."
                     value={inputUrl}
                     onChange={(e) => setInputUrl(e.target.value)}
-                    className="flex-1 bg-transparent px-4 py-3 focus:outline-none text-white"
+                    className="flex-1 bg-transparent px-4 py-2.5 focus:outline-none text-white text-sm placeholder-gray-400 font-mono"
                   />
                   <button 
                     type="submit"
                     disabled={isFolderResolving}
-                    className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2"
+                    className="glass-btn-primary disabled:opacity-50 text-white px-7 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
                   >
                     {isFolderResolving ? "Loading Folder..." : "Load Video"}
                   </button>
@@ -602,30 +606,30 @@ export default function Room() {
           )}
 
           {/* Control Center Overlay (Voice chat, chat toggle, stop video) */}
-          <div className="absolute top-4 right-4 flex items-center gap-2 p-1.5 bg-[#0a0a0a]/80 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl z-30">
+          <div className="absolute top-4 right-4 flex items-center gap-2 p-1.5 glass-panel rounded-2xl shadow-2xl z-30">
             <button 
               onClick={toggleMic}
-              className={`p-2.5 rounded-xl transition-all ${isMicOn ? "bg-gray-800 text-white" : "bg-red-600/20 text-red-600"}`}
+              className={`p-2.5 rounded-xl transition-all ${isMicOn ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25"}`}
               title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
             >
-              {isMicOn ? <Mic size={18} /> : <MicOff size={18} />}
+              {isMicOn ? <Mic size={17} /> : <MicOff size={17} />}
             </button>
             
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`p-2.5 rounded-xl transition-all ${isSidebarOpen ? "bg-gray-800 text-white" : "text-gray-500 hover:text-white"}`}
+              className={`p-2.5 rounded-xl transition-all ${isSidebarOpen ? "bg-white/[0.12] text-white" : "text-gray-400 hover:text-white hover:bg-white/[0.06]"}`}
               title="Toggle Chat"
             >
-              <Users size={18} />
+              <Users size={17} />
             </button>
             
             {videoUrl && (
               <button 
                 onClick={handleStopVideo}
-                className="p-2.5 rounded-xl text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                className="p-2.5 rounded-xl text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
                 title="Stop Video globally"
               >
-                <Square fill="currentColor" size={18} />
+                <Square fill="currentColor" size={17} />
               </button>
             )}
           </div>
@@ -638,23 +642,23 @@ export default function Room() {
               initial={{ x: 400 }}
               animate={{ x: 0 }}
               exit={{ x: 400 }}
-              className="w-80 border-l border-gray-900 bg-[#0a0a0a] flex flex-col"
+              className="w-80 border-l border-white/[0.08] glass-panel rounded-none border-y-0 border-r-0 flex flex-col z-40"
             >
-              <div className="p-4 border-b border-gray-900 flex items-center justify-between">
-                <span className="font-bold text-sm uppercase tracking-widest text-gray-500">Room Chat</span>
+              <div className="p-4 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+                <span className="font-bold text-xs uppercase tracking-widest text-gray-300">Room Chat</span>
                 <div className="flex items-center gap-2">
-                  <span className="bg-red-600/10 text-red-600 text-[10px] px-2 py-0.5 rounded-full font-bold">LIVE</span>
-                  <span className="text-xs text-gray-500">{userCount} Online</span>
+                  <span className="glass-pill text-red-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold">LIVE</span>
+                  <span className="text-xs text-gray-400 font-mono">{userCount} Online</span>
                 </div>
               </div>
               
               {/* Participants (Audio Only) */}
-              <div className="p-4 border-b border-gray-900 bg-gray-900/30">
+              <div className="p-4 border-b border-white/[0.08] bg-white/[0.015]">
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                   <div className="flex flex-col items-center gap-1 min-w-[60px]">
                     <AudioPulse stream={localStream} isActive={isMicOn}>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 z-10 relative ${isMicOn ? 'border-green-500 bg-[#0a0a0a]' : 'border-gray-700 bg-gray-800'}`}>
-                        <User size={20} className={isMicOn ? 'text-green-500' : 'text-gray-500'} />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 z-10 relative transition-all ${isMicOn ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)] bg-[#070912]' : 'border-white/10 glass-pill'}`}>
+                        <User size={19} className={isMicOn ? 'text-emerald-400' : 'text-gray-400'} />
                       </div>
                     </AudioPulse>
                     <span className="text-[10px] text-gray-400 font-medium">You</span>
@@ -662,8 +666,8 @@ export default function Room() {
                   {Array.from(remoteStreams.entries()).map(([userId, stream]) => (
                     <div key={userId} className="flex flex-col items-center gap-1 min-w-[60px]">
                       <AudioPulse stream={stream} isActive={true}>
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-green-500 bg-[#0a0a0a] z-10 relative">
-                          <User size={20} className="text-green-500" />
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.5)] bg-[#070912] z-10 relative">
+                          <User size={19} className="text-emerald-400" />
                         </div>
                       </AudioPulse>
                       <span className="text-[10px] text-gray-400 font-medium">{userId.substring(0, 4)}</span>
@@ -673,24 +677,24 @@ export default function Room() {
                 {!localStream && (
                   <button 
                     onClick={startCall}
-                    className="w-full mt-2 py-2 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-lg transition-all text-gray-300 flex items-center justify-center gap-2"
+                    className="w-full mt-2.5 py-2 glass-btn-secondary text-xs font-semibold rounded-xl text-gray-200 hover:text-white flex items-center justify-center gap-2"
                   >
-                    <Mic size={14} /> Join Voice Chat
+                    <Mic size={14} className="text-cyan-400" /> Join Voice Chat
                   </button>
                 )}
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-600 text-xs text-center px-4">
+                  <div className="h-full flex items-center justify-center text-gray-400/60 text-xs text-center px-4 font-mono">
                     No messages yet. Say hello!
                   </div>
                 ) : (
                   messages.map((msg) => (
                     <div key={msg.id} className={`flex flex-col ${msg.isSelf ? 'items-end' : 'items-start'}`}>
-                      <span className="text-[10px] text-gray-600 mb-1 px-1">{msg.isSelf ? 'You' : msg.sender}</span>
-                      <div className={`px-3 py-2 rounded-2xl max-w-[85%] text-sm ${msg.isSelf ? 'bg-red-600 text-white rounded-tr-sm' : 'bg-gray-800 text-gray-200 rounded-tl-sm'}`}>
+                      <span className="text-[10px] text-gray-400 mb-1 px-1">{msg.isSelf ? 'You' : msg.sender}</span>
+                      <div className={`px-3.5 py-2 rounded-2xl max-w-[85%] text-xs leading-relaxed ${msg.isSelf ? 'glass-btn-primary text-white rounded-tr-sm' : 'glass-pill bg-white/[0.06] text-gray-200 rounded-tl-sm border-white/[0.08]'}`}>
                         {msg.text}
                       </div>
                     </div>
@@ -700,21 +704,21 @@ export default function Room() {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-900 bg-[#0a0a0a]">
-                <form onSubmit={handleSendMessage} className="flex gap-2 p-1 bg-gray-900 rounded-xl border border-gray-800 focus-within:border-gray-600 transition-all">
+              <div className="p-4 border-t border-white/[0.08] bg-[#070912]/80">
+                <form onSubmit={handleSendMessage} className="flex gap-2 p-1.5 glass-input rounded-2xl focus-within:border-cyan-500/50 transition-all">
                   <input 
                     type="text" 
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Type a message..." 
-                    className="flex-1 bg-transparent text-sm px-3 py-2 focus:outline-none"
+                    className="flex-1 bg-transparent text-xs px-3 py-1.5 focus:outline-none text-white placeholder-gray-400"
                   />
                   <button 
                     type="submit"
                     disabled={!chatInput.trim()}
-                    className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:hover:text-gray-400 transition-all"
+                    className="p-2 text-gray-400 hover:text-cyan-300 disabled:opacity-40 transition-all"
                   >
-                    <Send size={18} />
+                    <Send size={16} />
                   </button>
                 </form>
               </div>

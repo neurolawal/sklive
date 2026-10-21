@@ -395,9 +395,9 @@ export default function CustomVideoPlayer({
         </div>
       )}
 
-      {/* Custom Control Bar Overlay */}
+      {/* Custom Control Bar Overlay - Elevated Floating Glass Dock */}
       <div
-        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 z-30 transition-opacity duration-300 ${
+        className={`absolute inset-x-3 sm:inset-x-6 bottom-4 glass-dock rounded-2xl sm:rounded-3xl p-3 sm:p-4 z-30 transition-opacity duration-300 shadow-2xl ${
           showControls || !playing ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
@@ -410,20 +410,20 @@ export default function CustomVideoPlayer({
             step={0.1}
             value={currentTime}
             onChange={handleScrubberChange}
-            className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-red-600 hover:h-2.5 transition-all"
+            className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-red-500 hover:h-2.5 transition-all"
           />
         </div>
 
         {/* Buttons and Time Display */}
         <div className="flex items-center justify-between gap-3 text-white">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Play/Pause */}
             <button
               onClick={handleTogglePlay}
-              className="p-2 hover:bg-white/10 rounded-full transition-all"
+              className="p-2 glass-pill rounded-full transition-all text-white hover:text-white"
               title={playing ? "Pause (Space)" : "Play (Space)"}
             >
-              {playing ? <Pause size={22} fill="white" /> : <Play size={22} fill="white" />}
+              {playing ? <Pause size={20} fill="white" /> : <Play size={20} fill="white" />}
             </button>
 
             {/* Skip Backward 10s */}
@@ -432,7 +432,7 @@ export default function CustomVideoPlayer({
               className="p-2 hover:bg-white/10 rounded-full transition-all text-gray-300 hover:text-white"
               title="Skip back 10 seconds"
             >
-              <RotateCcw size={20} />
+              <RotateCcw size={18} />
             </button>
 
             {/* Skip Forward 10s */}
@@ -441,7 +441,7 @@ export default function CustomVideoPlayer({
               className="p-2 hover:bg-white/10 rounded-full transition-all text-gray-300 hover:text-white"
               title="Skip ahead 10 seconds"
             >
-              <RotateCw size={20} />
+              <RotateCw size={18} />
             </button>
 
             {/* Next Video in Queue */}
@@ -454,7 +454,7 @@ export default function CustomVideoPlayer({
                 className="p-2 hover:bg-white/10 rounded-full transition-all text-gray-300 hover:text-white"
                 title="Next Video in Queue"
               >
-                <SkipForward size={20} />
+                <SkipForward size={18} />
               </button>
             )}
 
@@ -465,7 +465,7 @@ export default function CustomVideoPlayer({
                 className="p-2 hover:bg-white/10 rounded-full transition-all text-gray-300 hover:text-white"
                 title={isMuted ? "Unmute" : "Mute"}
               >
-                {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
               <input
                 type="range"
@@ -477,12 +477,12 @@ export default function CustomVideoPlayer({
                   setVolume(parseFloat(e.target.value));
                   setIsMuted(false);
                 }}
-                className="w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-red-600 opacity-0 group-hover/volume:opacity-100 transition-opacity"
+                className="w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-red-500 opacity-0 group-hover/volume:opacity-100 transition-opacity"
               />
             </div>
 
             {/* Time Stamp with Direct Edit/Jump Button */}
-            <div className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded-lg border border-white/10 transition-all">
+            <div className="flex items-center gap-1.5 glass-pill px-2.5 py-1 rounded-xl transition-all">
               <span className="text-xs font-mono text-gray-300">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
@@ -493,23 +493,23 @@ export default function CustomVideoPlayer({
                 title="Jump to specific timestamp in video (syncs with partner)"
               >
                 <Clock size={12} className="text-red-400" />
-                <span className="text-[10px] font-semibold text-gray-400 hover:text-white uppercase tracking-wider hidden sm:inline">Jump</span>
+                <span className="text-[10px] font-semibold text-gray-400 hover:text-white uppercase tracking-wider hidden sm:inline font-mono">Jump</span>
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {/* Subtitles Toggle & Setup */}
             <button
               onClick={openSubtitleModal}
               className={`p-2 rounded-full transition-all flex items-center gap-1.5 text-xs font-semibold px-3 ${
                 subtitles
-                  ? "bg-red-600 text-white shadow-md shadow-red-600/30"
-                  : "bg-white/10 text-gray-300 hover:text-white hover:bg-white/20"
+                  ? "glass-btn-primary text-white"
+                  : "glass-pill text-gray-300 hover:text-white"
               }`}
               title="Subtitles / Closed Captions"
             >
-              <Subtitles size={18} />
+              <Subtitles size={16} />
               <span>{subtitles ? "CC ON" : "CC"}</span>
             </button>
 
@@ -519,12 +519,12 @@ export default function CustomVideoPlayer({
                 onClick={() => setIsPlaylistOpen(!isPlaylistOpen)}
                 className={`p-2 rounded-full transition-all flex items-center gap-1.5 text-xs font-semibold px-3 ${
                   isPlaylistOpen
-                    ? "bg-red-600 text-white"
-                    : "bg-white/10 text-gray-300 hover:text-white hover:bg-white/20"
+                    ? "glass-btn-primary text-white"
+                    : "glass-pill text-gray-300 hover:text-white"
                 }`}
                 title="Playlist / Queue"
               >
-                <ListVideo size={18} />
+                <ListVideo size={16} />
                 <span>{queue.length}</span>
               </button>
             )}
@@ -535,7 +535,7 @@ export default function CustomVideoPlayer({
               className="p-2 hover:bg-white/10 rounded-full transition-all text-gray-300 hover:text-white"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
-              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+              {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
           </div>
         </div>
@@ -543,27 +543,27 @@ export default function CustomVideoPlayer({
 
       {/* Playlist Drawer (Slide-in over video) */}
       {isPlaylistOpen && queue.length > 0 && (
-        <div className="absolute right-0 top-0 bottom-16 w-80 bg-black/90 backdrop-blur-xl border-l border-white/10 z-40 p-4 flex flex-col">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-            <h3 className="font-bold text-sm tracking-wide text-white uppercase flex items-center gap-2">
-              <ListVideo size={16} className="text-red-600" />
+        <div className="absolute right-0 top-0 bottom-[5.5rem] w-80 glass-panel border-y-0 border-r-0 border-l border-white/[0.12] rounded-none rounded-b-2xl z-40 p-5 flex flex-col shadow-2xl">
+          <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08] mb-3">
+            <h3 className="font-bold text-xs tracking-wider text-white uppercase flex items-center gap-2">
+              <ListVideo size={15} className="text-red-500" />
               Playlist ({queue.length})
             </h3>
             <button
               onClick={() => setIsPlaylistOpen(false)}
-              className="p-1 hover:bg-white/10 rounded-full text-gray-400 hover:text-white"
+              className="p-1 hover:bg-white/[0.1] rounded-full text-gray-400 hover:text-white transition-all"
             >
-              <X size={18} />
+              <X size={17} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3">
             {queue.map((item, idx) => (
               <div
                 key={item.id}
-                className={`p-3 rounded-xl cursor-pointer text-xs flex items-center gap-2 group/item transition-all ${
+                className={`p-3 rounded-2xl cursor-pointer text-xs flex items-center gap-2.5 group/item transition-all ${
                   idx === currentQueueIndex
-                    ? "bg-red-600 text-white font-bold shadow-lg"
-                    : "bg-white/5 hover:bg-white/10 text-gray-300"
+                    ? "glass-btn-primary text-white font-bold"
+                    : "glass-pill bg-white/[0.035] text-gray-300 hover:text-white"
                 }`}
               >
                 <div
@@ -584,7 +584,7 @@ export default function CustomVideoPlayer({
                   className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-md transition-all opacity-80 hover:opacity-100"
                   title="Remove from playlist"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             ))}
@@ -598,23 +598,23 @@ export default function CustomVideoPlayer({
               onAddToQueue(playlistInput.trim());
               setPlaylistInput("");
             }}
-            className="pt-3 border-t border-white/10 flex flex-col gap-2"
+            className="pt-3 border-t border-white/[0.08] flex flex-col gap-2"
           >
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-mono">
               Add More Videos (Paste link(s))
             </span>
             <div className="flex gap-1.5">
               <input
                 type="text"
-                placeholder="Paste video URL(s)..."
+                placeholder="Paste URL(s)..."
                 value={playlistInput}
                 onChange={(e) => setPlaylistInput(e.target.value)}
-                className="flex-1 bg-white/10 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-600"
+                className="flex-1 glass-input rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none font-mono"
               />
               <button
                 type="submit"
                 disabled={!playlistInput.trim()}
-                className="bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                className="glass-btn-primary disabled:opacity-40 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider"
               >
                 Add
               </button>
@@ -625,33 +625,33 @@ export default function CustomVideoPlayer({
 
       {/* Subtitles Modal */}
       {isSubtitleModalOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-gray-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-6 text-white">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+        <div className="absolute inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 text-white animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
               <div className="flex items-center gap-2">
-                <Subtitles className="text-red-600" size={24} />
-                <h3 className="text-lg font-bold">Subtitles & Captions</h3>
+                <Subtitles className="text-red-500" size={22} />
+                <h3 className="text-base font-bold">Subtitles & Captions</h3>
               </div>
               <button
                 onClick={() => setIsSubtitleModalOpen(false)}
-                className="p-1.5 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
+                className="p-1.5 hover:bg-white/[0.1] rounded-xl text-gray-400 hover:text-white transition-all"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             {/* Currently Active Subtitle */}
             {subtitles && (
-              <div className="p-3 bg-red-600/10 border border-red-600/30 rounded-xl flex items-center justify-between">
+              <div className="p-3.5 glass-pill border-red-500/30 bg-red-500/10 rounded-2xl flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-red-400 uppercase font-bold tracking-wider block">
+                  <span className="text-[10px] text-red-400 uppercase font-bold tracking-wider block font-mono">
                     Active Subtitle Track
                   </span>
-                  <span className="text-sm font-semibold truncate block max-w-xs">{subtitles.name}</span>
+                  <span className="text-sm font-semibold truncate block max-w-xs text-white">{subtitles.name}</span>
                 </div>
                 <button
                   onClick={() => onUpdateSubtitles(null)}
-                  className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg font-bold"
+                  className="text-xs glass-btn-primary px-3 py-1.5 rounded-xl font-bold"
                 >
                   Turn Off
                 </button>
@@ -660,7 +660,7 @@ export default function CustomVideoPlayer({
 
             {/* Option 1: Upload Local File */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider font-mono">
                 1. Upload Subtitle File (.srt, .vtt)
               </label>
               <input
@@ -672,15 +672,15 @@ export default function CustomVideoPlayer({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl text-sm font-bold flex items-center justify-center gap-2 text-gray-200 transition-all"
+                className="w-full py-3 glass-btn-secondary rounded-2xl text-xs font-bold flex items-center justify-center gap-2 text-gray-200 hover:text-white transition-all uppercase tracking-wider"
               >
-                <Upload size={16} /> Choose file from your computer
+                <Upload size={15} /> Choose file from your computer
               </button>
             </div>
 
             {/* Option 2: Search Online */}
-            <div className="space-y-3 pt-2 border-t border-gray-800">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            <div className="space-y-3 pt-2 border-t border-white/[0.08]">
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider font-mono">
                 2. Search Free Subtitles Online
               </label>
               <form onSubmit={handleSearchSubtitles} className="flex gap-2">
@@ -689,14 +689,14 @@ export default function CustomVideoPlayer({
                   placeholder="Enter movie / show title..."
                   value={subtitleSearchQuery}
                   onChange={(e) => setSubtitleSearchQuery(e.target.value)}
-                  className="flex-1 bg-gray-900 border border-gray-800 px-4 py-2 rounded-xl text-sm focus:outline-none focus:border-red-600"
+                  className="flex-1 glass-input px-4 py-2.5 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={isSearchingSubtitles || !subtitleSearchQuery.trim()}
-                  className="bg-red-600 hover:bg-red-700 disabled:opacity-50 px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2"
+                  className="glass-btn-primary disabled:opacity-40 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 uppercase tracking-wider"
                 >
-                  {isSearchingSubtitles ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                  {isSearchingSubtitles ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
                   Search
                 </button>
               </form>
@@ -707,23 +707,23 @@ export default function CustomVideoPlayer({
                   {subtitleResults.map((sub) => (
                     <div
                       key={sub.id}
-                      className="p-3 bg-gray-900/60 hover:bg-gray-800/80 border border-gray-800/80 rounded-xl flex items-center justify-between text-xs transition-all"
+                      className="p-3 glass-pill rounded-2xl flex items-center justify-between text-xs transition-all"
                     >
                       <div className="truncate flex-1 mr-3">
-                        <span className="font-semibold block truncate">{sub.release}</span>
-                        <span className="text-gray-500 text-[10px] uppercase">
+                        <span className="font-semibold block truncate text-white">{sub.release}</span>
+                        <span className="text-gray-400 text-[10px] uppercase font-mono">
                           Lang: {sub.language} • Downloads: {sub.downloads}
                         </span>
                       </div>
                       <button
                         onClick={() => handleSelectOnlineSubtitle(sub)}
                         disabled={isDownloadingSub === sub.id}
-                        className="bg-gray-800 hover:bg-red-600 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 transition-all"
+                        className="glass-btn-secondary hover:border-red-500/40 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1 transition-all"
                       >
                         {isDownloadingSub === sub.id ? (
                           <Loader2 size={12} className="animate-spin" />
                         ) : (
-                          <Check size={12} />
+                          <Check size={12} className="text-emerald-400" />
                         )}
                         Load
                       </button>
@@ -737,16 +737,16 @@ export default function CustomVideoPlayer({
       )}
       {/* Jump to Specific Timestamp Modal */}
       {isJumpModalOpen && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#121212] border border-gray-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 text-white">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div className="absolute inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-white animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3.5">
               <div className="flex items-center gap-2">
                 <Clock className="text-red-500" size={20} />
                 <h3 className="text-base font-bold">Jump to Timestamp</h3>
               </div>
               <button
                 onClick={() => setIsJumpModalOpen(false)}
-                className="p-1 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
+                className="p-1.5 hover:bg-white/[0.1] rounded-xl text-gray-400 hover:text-white transition-all"
               >
                 <X size={18} />
               </button>
@@ -770,7 +770,7 @@ export default function CustomVideoPlayer({
                     setJumpTimeInput(e.target.value);
                     if (jumpError) setJumpError("");
                   }}
-                  className="w-full bg-gray-900 border border-gray-800 focus:border-red-600 rounded-xl px-3.5 py-2.5 text-base font-mono text-center tracking-wider text-white focus:outline-none transition-all"
+                  className="w-full glass-input rounded-2xl px-4 py-3 text-base font-mono text-center tracking-wider text-white placeholder-gray-500 focus:outline-none transition-all"
                 />
                 {jumpError && (
                   <p className="text-red-400 text-xs mt-1.5 text-center font-medium">{jumpError}</p>
@@ -782,35 +782,35 @@ export default function CustomVideoPlayer({
                 <button
                   type="button"
                   onClick={() => handleQuickJump(-300)}
-                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                  className="px-2.5 py-1 glass-btn-secondary rounded-xl text-[11px] font-mono text-gray-300 hover:text-white transition-all"
                 >
                   -5m
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickJump(-60)}
-                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                  className="px-2.5 py-1 glass-btn-secondary rounded-xl text-[11px] font-mono text-gray-300 hover:text-white transition-all"
                 >
                   -1m
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickJump(60)}
-                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                  className="px-2.5 py-1 glass-btn-secondary rounded-xl text-[11px] font-mono text-gray-300 hover:text-white transition-all"
                 >
                   +1m
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickJump(300)}
-                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                  className="px-2.5 py-1 glass-btn-secondary rounded-xl text-[11px] font-mono text-gray-300 hover:text-white transition-all"
                 >
                   +5m
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickJump(900)}
-                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                  className="px-2.5 py-1 glass-btn-secondary rounded-xl text-[11px] font-mono text-gray-300 hover:text-white transition-all"
                 >
                   +15m
                 </button>
@@ -820,13 +820,13 @@ export default function CustomVideoPlayer({
                 <button
                   type="button"
                   onClick={() => setIsJumpModalOpen(false)}
-                  className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition-all"
+                  className="flex-1 py-2.5 glass-btn-secondary rounded-xl text-xs font-bold text-gray-300 hover:text-white transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 glass-btn-primary text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 uppercase tracking-wider"
                 >
                   <Clock size={14} />
                   Jump & Sync
