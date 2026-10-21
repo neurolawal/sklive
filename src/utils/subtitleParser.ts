@@ -88,3 +88,40 @@ export function formatTime(seconds: number): string {
   }
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
+
+// Flexible timestamp input parser (e.g. "01:25:30", "45:10", "1h 20m", or pure numbers)
+export function parseHumanTimeInput(input: string): number | null {
+  const str = input.trim();
+  if (!str) return null;
+
+  // Pattern 1: HH:MM:SS or MM:SS
+  if (str.includes(":")) {
+    const parts = str.split(":").map(p => parseFloat(p.trim()));
+    if (parts.some(isNaN)) return null;
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+  }
+
+  // Pattern 2: "1h 20m 15s" or "45m" or "30s"
+  const hMatch = str.match(/(\d+)\s*h/i);
+  const mMatch = str.match(/(\d+)\s*m/i);
+  const sMatch = str.match(/(\d+)\s*s/i);
+  if (hMatch || mMatch || sMatch) {
+    const h = hMatch ? parseInt(hMatch[1], 10) : 0;
+    const m = mMatch ? parseInt(mMatch[1], 10) : 0;
+    const s = sMatch ? parseInt(sMatch[1], 10) : 0;
+    return h * 3600 + m * 60 + s;
+  }
+
+  // Pattern 3: Pure numbers (e.g. 45 or 90)
+  const num = parseFloat(str);
+  if (!isNaN(num) && num >= 0) {
+    return num;
+  }
+
+  return null;
+}
+

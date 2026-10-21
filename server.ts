@@ -297,9 +297,13 @@ async function startServer() {
       socket.join(roomId);
       console.log(`User ${socket.id} joined room ${roomId}`);
 
-      // Send current room state
+      // Send current room state with elapsed time if playing
       const state = getOrCreateRoom(roomId);
-      socket.emit("room-state", state);
+      let calculatedTime = state.currentTime;
+      if (state.playing && state.lastUpdated) {
+        calculatedTime += (Date.now() - state.lastUpdated) / 1000;
+      }
+      socket.emit("room-state", { ...state, currentTime: calculatedTime });
       io.to(roomId).emit("user-count", io.sockets.adapter.rooms.get(roomId)?.size || 1);
     });
 

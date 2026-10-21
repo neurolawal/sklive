@@ -3,9 +3,10 @@ import ReactPlayer from "react-player";
 import {
   Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX,
   Maximize, Minimize, Subtitles, ListVideo, Search,
-  Upload, Check, X, SkipForward, SkipBack, Loader2, Trash2
+  Upload, Check, X, SkipForward, SkipBack, Loader2, Trash2,
+  Clock, Edit3
 } from "lucide-react";
-import { SubtitleCue, formatTime, parseSubtitleFile } from "../utils/subtitleParser";
+import { SubtitleCue, formatTime, parseSubtitleFile, parseHumanTimeInput } from "../utils/subtitleParser";
 
 interface PlaylistItem {
   id: string;
@@ -14,10 +15,11 @@ interface PlaylistItem {
 }
 
 interface CustomVideoPlayerProps {
+  playerRef?: React.RefObject<any>;
   url: string;
   playing: boolean;
-  onPlay: () => void;
-  onPause: () => void;
+  onPlay: (time?: number) => void;
+  onPause: (time?: number) => void;
   onSeek: (seconds: number) => void;
   onEnded: () => void;
   // Subtitle props
@@ -32,6 +34,7 @@ interface CustomVideoPlayerProps {
 }
 
 export default function CustomVideoPlayer({
+  playerRef: externalPlayerRef,
   url,
   playing,
   onPlay,
@@ -47,7 +50,8 @@ export default function CustomVideoPlayer({
   onRemoveFromQueue,
 }: CustomVideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
+  const fallbackPlayerRef = useRef<any>(null);
+  const playerRef = externalPlayerRef || fallbackPlayerRef;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [currentTime, setCurrentTime] = useState(0);
@@ -92,6 +96,72 @@ export default function CustomVideoPlayer({
       console.warn("Unstick attempt error:", e);
     }
   };
+
+  // Jump to Timestamp modal state
+  const [isJumpModalOpen, setIsJumpModalOpen] = useState(false);
+  const [jumpTimeInput, setJumpTimeInput] = useState("");
+  const [jumpError, setJumpError] = useState("");
+
+  const openJumpModal = () => {
+    setJumpTimeInput(formatTime(currentTime));
+    setJumpError("");
+    setIsJumpModalOpen(true);
+  };
+
+  const handleJumpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseHumanTimeInput(jumpTimeInput);
+    if (parsed === null || isNaN(parsed) || parsed < 0) {
+      setJumpError("Invalid format. Use MM:SS or HH:MM:SS (e.g. 35:20)");
+      return;
+    }
+    const target = Math.min(duration || Infinity, parsed);
+    setCurrentTime(target);
+    if (playerRef.current) {
+      playerRef.current.currentTime = target;
+    }
+    onSeek(target);
+    setIsJumpModalOpen(false);
+  };
+
+  const handleQuickJump = (deltaSeconds: number) => {
+    const target = Math.max(0, Math.min(duration || Infinity, currentTime + deltaSeconds));
+    setCurrentTime(target);
+    if (playerRef.current) {
+      playerRef.current.currentTime = target;
+    }
+    onSeek(target);
+    setIsJumpModalOpen(false);
+  };
+
+  // Direct toggle play without echo loops
+  const handleTogglePlay = () => {
+    const curr = playerRef.current?.currentTime ?? currentTime;
+    if (playing) {
+      onPause(curr);
+    } else {
+      onPlay(curr);
+    }
+  };
+
+  // Keyboard controls (Space to toggle play/pause, Left/Right arrow to skip 10s)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleTogglePlay();
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        handleSkip(10);
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        handleSkip(-10);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [playing, currentTime, duration]);
 
   // Subtitle search modal
   const [isSubtitleModalOpen, setIsSubtitleModalOpen] = useState(false);
@@ -264,8 +334,6 @@ export default function CustomVideoPlayer({
         preload="metadata"
         playsInline
         volume={isMuted ? 0 : volume}
-        onPlay={onPlay}
-        onPause={onPause}
         onEnded={onEnded}
         onWaiting={handleBufferStart}
         onStalled={handleBufferStart}
@@ -273,7 +341,7 @@ export default function CustomVideoPlayer({
         onCanPlay={handleBufferEnd}
         onSeeked={(e: any) => {
           handleBufferEnd();
-          onSeek(e.currentTarget.currentTime);
+          setCurrentTime(e.currentTarget.currentTime);
         }}
         onTimeUpdate={(e: any) => {
           handleBufferEnd();
@@ -308,7 +376,7 @@ export default function CustomVideoPlayer({
 
       {/* Center Big Play/Pause Indicator on Click */}
       <div
-        onClick={playing ? onPause : onPlay}
+        onClick={handleTogglePlay}
         className="absolute inset-0 cursor-pointer flex items-center justify-center z-10"
       >
         {!playing && (
@@ -351,9 +419,9 @@ export default function CustomVideoPlayer({
           <div className="flex items-center gap-3">
             {/* Play/Pause */}
             <button
-              onClick={playing ? onPause : onPlay}
+              onClick={handleTogglePlay}
               className="p-2 hover:bg-white/10 rounded-full transition-all"
-              title={playing ? "Pause" : "Play"}
+              title={playing ? "Pause (Space)" : "Play (Space)"}
             >
               {playing ? <Pause size={22} fill="white" /> : <Play size={22} fill="white" />}
             </button>
@@ -413,10 +481,21 @@ export default function CustomVideoPlayer({
               />
             </div>
 
-            {/* Time Stamp */}
-            <span className="text-xs font-mono text-gray-400">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
+            {/* Time Stamp with Direct Edit/Jump Button */}
+            <div className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded-lg border border-white/10 transition-all">
+              <span className="text-xs font-mono text-gray-300">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+              <button
+                type="button"
+                onClick={openJumpModal}
+                className="text-gray-400 hover:text-white p-0.5 rounded hover:bg-white/20 transition-all flex items-center gap-1"
+                title="Jump to specific timestamp in video (syncs with partner)"
+              >
+                <Clock size={12} className="text-red-400" />
+                <span className="text-[10px] font-semibold text-gray-400 hover:text-white uppercase tracking-wider hidden sm:inline">Jump</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -653,6 +732,107 @@ export default function CustomVideoPlayer({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Jump to Specific Timestamp Modal */}
+      {isJumpModalOpen && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#121212] border border-gray-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 text-white">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="text-red-500" size={20} />
+                <h3 className="text-base font-bold">Jump to Timestamp</h3>
+              </div>
+              <button
+                onClick={() => setIsJumpModalOpen(false)}
+                className="p-1 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="text-xs text-gray-400">
+              Enter any timestamp to jump and sync both viewers instantly.
+              <div className="mt-1 font-mono text-gray-300">
+                Current: <span className="text-red-400">{formatTime(currentTime)}</span> / {formatTime(duration)}
+              </div>
+            </div>
+
+            <form onSubmit={handleJumpSubmit} className="space-y-3">
+              <div>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="e.g. 45:20, 1:15:00, or 90"
+                  value={jumpTimeInput}
+                  onChange={(e) => {
+                    setJumpTimeInput(e.target.value);
+                    if (jumpError) setJumpError("");
+                  }}
+                  className="w-full bg-gray-900 border border-gray-800 focus:border-red-600 rounded-xl px-3.5 py-2.5 text-base font-mono text-center tracking-wider text-white focus:outline-none transition-all"
+                />
+                {jumpError && (
+                  <p className="text-red-400 text-xs mt-1.5 text-center font-medium">{jumpError}</p>
+                )}
+              </div>
+
+              {/* Quick Jump Shortcuts */}
+              <div className="flex flex-wrap gap-1.5 justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(-300)}
+                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                >
+                  -5m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(-60)}
+                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                >
+                  -1m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(60)}
+                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                >
+                  +1m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(300)}
+                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                >
+                  +5m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickJump(900)}
+                  className="px-2.5 py-1 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-lg text-[11px] font-mono text-gray-300 hover:text-white transition-all"
+                >
+                  +15m
+                </button>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsJumpModalOpen(false)}
+                  className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/30 flex items-center justify-center gap-1.5"
+                >
+                  <Clock size={14} />
+                  Jump & Sync
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

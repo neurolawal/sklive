@@ -79,22 +79,21 @@ export default function Room() {
     });
 
     newSocket.on("video-update", (data: any) => {
-      if (!isSyncingRef.current || syncLockRef.current) return;
+      if (!isSyncingRef.current) return;
       
-      syncLockRef.current = true;
-      if (data.videoUrl !== videoUrlRef.current) {
+      if (data.videoUrl && data.videoUrl !== videoUrlRef.current) {
         setVideoUrl(data.videoUrl);
       }
       setPlaying(data.playing);
       
-      // Only seek if the difference is significant (> 2 seconds)
-      const currentPos = playerRef.current?.currentTime || 0;
-      const diff = Math.abs(currentPos - data.currentTime);
-      if (diff > 2 && playerRef.current) {
-        playerRef.current.currentTime = data.currentTime;
+      if (playerRef.current && typeof data.currentTime === "number") {
+        const currentPos = playerRef.current.currentTime || 0;
+        const diff = Math.abs(currentPos - data.currentTime);
+        // If difference is significant (> 0.8s) or video is paused, snap accurately
+        if (diff > 0.8 || !data.playing) {
+          playerRef.current.currentTime = data.currentTime;
+        }
       }
-      
-      setTimeout(() => { syncLockRef.current = false; }, 500);
     });
 
     newSocket.on("room-state", (data: any) => {
@@ -268,34 +267,33 @@ export default function Room() {
   };
 
   // Video Controls
-  const handlePlay = () => {
-    if (syncLockRef.current) return;
+  const handlePlay = (time?: number) => {
     setPlaying(true);
+    const curr = typeof time === "number" ? time : (playerRef.current?.currentTime || 0);
     if (isSyncing) {
       socket?.emit("video-update", {
         roomId,
         videoUrl,
         playing: true,
-        currentTime: playerRef.current?.currentTime || 0
+        currentTime: curr
       });
     }
   };
 
-  const handlePause = () => {
-    if (syncLockRef.current) return;
+  const handlePause = (time?: number) => {
     setPlaying(false);
+    const curr = typeof time === "number" ? time : (playerRef.current?.currentTime || 0);
     if (isSyncing) {
       socket?.emit("video-update", {
         roomId,
         videoUrl,
         playing: false,
-        currentTime: playerRef.current?.currentTime || 0
+        currentTime: curr
       });
     }
   };
 
   const handleSeek = (seconds: number) => {
-    if (syncLockRef.current) return;
     if (isSyncing) {
       socket?.emit("video-update", {
         roomId,
@@ -585,6 +583,7 @@ export default function Room() {
           ) : (
             <div className="flex-1 bg-black relative">
               <CustomVideoPlayer
+                playerRef={playerRef}
                 url={videoUrl}
                 playing={playing}
                 onPlay={handlePlay}
