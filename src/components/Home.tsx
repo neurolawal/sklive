@@ -34,7 +34,7 @@ export default function Home() {
       >
         <div className="space-y-2">
           <h1 className="text-6xl font-black tracking-tighter text-white">
-            sk<span className="text-red-600">live</span>
+            ks<span className="text-red-600">live</span>
           </h1>
           <p className="text-gray-400 text-lg">Let’s see if this survives movie night.</p>
         </div>

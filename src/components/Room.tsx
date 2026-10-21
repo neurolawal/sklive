@@ -516,7 +516,7 @@ export default function Room() {
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-900 bg-[#0a0a0a]/80 backdrop-blur-md z-50">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-black tracking-tighter cursor-pointer" onClick={() => navigate("/")}>
-            sk<span className="text-red-600">live</span>
+            ks<span className="text-red-600">live</span>
           </h1>
           <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-gray-900 rounded-full border border-gray-800 text-xs font-mono text-gray-400">
             <Users size={14} className="text-red-600" />
